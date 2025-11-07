@@ -1,10 +1,12 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from uuid import uuid4
-from datetime import datetime
+from datetime import datetime, timezone
 
-app = FastAPI()
+#FastAPI-App initialisieren
+app = FastAPI(title="Payment Service", version="1.0")
 
+#Datenmodelle
 class PaymentRequest(BaseModel):
     order_id: str
     amount: float
@@ -19,16 +21,32 @@ class PaymentResponse(BaseModel):
     currency: str
     created_at: str
 
-@app.post("/payments", response_model=PaymentResponse)
+#Zahlung ausführen
+@app.post("/payments", response_model=PaymentResponse, status_code=201)
 def create_payment(request: PaymentRequest):
+
+    #Fehlerfall 1: Ware nicht auf Lager
+    if request.order_id == "OUT-OF-STOCK":
+        raise HTTPException(
+            status_code=400,
+            detail="Payment failed: item currently out of stock."
+        )
+
+    #Fehlerfall 2: Timeout beim Zahlungsanbieter
+    if request.order_id == "TIMEOUT":
+        raise HTTPException(
+            status_code=504,
+            detail="Payment failed: payment provider did not respond in time."
+        )
+
+    #Erfolgreiche Zahlung
     payment_id = str(uuid4())
-    status = "CAPTURED"  
-    created_at = datetime.utcnow().isoformat()
+    created_at = datetime.now(timezone.utc).isoformat()
 
     payment = PaymentResponse(
         payment_id=payment_id,
         order_id=request.order_id,
-        status=status,
+        status="CAPTURED",   
         amount=request.amount,
         currency=request.currency,
         created_at=created_at
@@ -36,12 +54,3 @@ def create_payment(request: PaymentRequest):
 
     print(f"[LOG] Payment created: {payment}")
     return payment
-
-
-@app.get("/")
-def root():
-    return {"message": "Payment Service läuft 🚀"}
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)
