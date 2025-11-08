@@ -3,7 +3,7 @@ mock_payments = [
         "order_id": "ORD-1001",
         "amount": 49.99,
         "currency": "EUR",
-        "method": "CARD",
+        "method": "BANK_TRANSFER",
         "status": "CAPTURED"
     },
     {
@@ -12,12 +12,5 @@ mock_payments = [
         "currency": "EUR",
         "method": "PAYPAL",
         "status": "DECLINED"
-    },
-    {
-        "order_id": "ORD-1003",
-        "amount": 10.00,
-        "currency": "EUR",
-        "method": "CASH",
-        "status": "CAPTURED"
     }
 ]
