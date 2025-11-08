@@ -25,12 +25,12 @@ class PaymentResponse(BaseModel):
 @app.post("/payments", response_model=PaymentResponse, status_code=201)
 def create_payment(request: PaymentRequest):
 
-    #Fehlerfall 1: Ware nicht auf Lager
-    if request.order_id == "OUT-OF-STOCK":
+    #Fehlerfall 1: Nicht genug Guthaben
+    if request.amount > 1000:
         raise HTTPException(
-            status_code=400,
-            detail="Payment failed: item currently out of stock."
-        )
+            status_code=402,
+            detail="Payment declined: not enough balance on account."
+)
 
     #Fehlerfall 2: Timeout beim Zahlungsanbieter
     if request.order_id == "TIMEOUT":
