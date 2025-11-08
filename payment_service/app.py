@@ -2,13 +2,13 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from uuid import uuid4
 from datetime import datetime, timezone
+from mock_data import mock_accounts
 
-#FastAPI-App initialisieren
 app = FastAPI(title="Payment Service", version="1.0")
 
-#Datenmodelle
 class PaymentRequest(BaseModel):
     order_id: str
+    customer_id: str
     amount: float
     currency: str
     method: str
@@ -21,36 +21,31 @@ class PaymentResponse(BaseModel):
     currency: str
     created_at: str
 
-#Zahlung ausführen
 @app.post("/payments", response_model=PaymentResponse, status_code=201)
 def create_payment(request: PaymentRequest):
 
-    #Fehlerfall 1: Nicht genug Guthaben
-    if request.amount > 1000: #weil wir keinen echten Kontostand haben
-        raise HTTPException(
-            status_code=402,
-            detail="Payment declined: not enough balance on account."
-)
+    # Konto suchen
+    account = next((a for a in mock_accounts if a["customer_id"] == request.customer_id), None)
+    if not account:
+        raise HTTPException(status_code=404, detail="Customer account not found.")
 
-    #Fehlerfall 2: Timeout beim Zahlungsanbieter
-    if request.order_id == "TIMEOUT":
-        raise HTTPException(
-            status_code=504,
-            detail="Payment failed: payment provider did not respond in time."
-        )
+    # Guthaben prüfen
+    if request.amount > account["balance"]:
+        raise HTTPException(status_code=402, detail="Payment declined: account not covered.")
 
-    #Erfolgreiche Zahlung
+    # Zahlung erfolgreich -> Guthaben abbuchen
+    account["balance"] -= request.amount
     payment_id = str(uuid4())
     created_at = datetime.now(timezone.utc).isoformat()
 
     payment = PaymentResponse(
         payment_id=payment_id,
         order_id=request.order_id,
-        status="CAPTURED",   
+        status="CAPTURED",
         amount=request.amount,
         currency=request.currency,
         created_at=created_at
     )
 
-    print(f"[LOG] Payment created: {payment}")
+    print(f"[LOG] Payment created for {request.customer_id}: {payment}")
     return payment
