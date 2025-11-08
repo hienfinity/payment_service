@@ -26,7 +26,7 @@ class PaymentResponse(BaseModel):
 def create_payment(request: PaymentRequest):
 
     #Fehlerfall 1: Nicht genug Guthaben
-    if request.amount > 1000:
+    if request.amount > 1000: #weil wir keine echten Kontostand haben
         raise HTTPException(
             status_code=402,
             detail="Payment declined: not enough balance on account."
