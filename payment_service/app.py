@@ -10,7 +10,6 @@ class PaymentRequest(BaseModel):
     order_id: str
     customer_id: str
     amount: float
-    currency: str
     method: str
 
 class PaymentResponse(BaseModel):
@@ -18,7 +17,6 @@ class PaymentResponse(BaseModel):
     order_id: str
     status: str
     amount: float
-    currency: str
     created_at: str
 
 @app.post("/payments", response_model=PaymentResponse, status_code=201)
@@ -43,7 +41,6 @@ def create_payment(request: PaymentRequest):
         order_id=request.order_id,
         status="CAPTURED",
         amount=request.amount,
-        currency=request.currency,
         created_at=created_at
     )
 
